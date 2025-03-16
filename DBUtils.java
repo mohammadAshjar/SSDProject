@@ -3,7 +3,7 @@ import java.sql.SQLException;
 import java.sql.*;
 
 class DBUtils {
-    private static String url = "jdbc:mysql://localhost:3306/lab03";
+    private static String url = "jdbc:mysql://localhost:3306/project";
     private static String appUsername = "root";
     private static String appPassword = "";
 

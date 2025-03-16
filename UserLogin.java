@@ -57,14 +57,14 @@ public class UserLogin {
         String username = usernameField.getText();
         String password = passwordField.getText();
         Connection con = DBUtils.establishConnection();
-        String verificationQuery ="SELECT * FROM users WHERE username=?;";
-        String query = "SELECT * FROM users WHERE username=? AND password=?;";
+        String verificationQuery ="SELECT * FROM users WHERE Name=?;";
+        String query = "SELECT * FROM users WHERE Name=? AND Password=?;";
         try{
             PreparedStatement statement = con.prepareStatement(verificationQuery);
             statement.setString(1,username);
             ResultSet rs = statement.executeQuery();
             if(rs.next()){
-                byte[] salt = toBytes(rs.getString(6));
+                byte[] salt = toBytes(rs.getString(5));
                 String hashPass = generateHash(password,algorithm,salt);
                 PreparedStatement st = con.prepareStatement(query);
                 st.setString(1, username);
@@ -73,7 +73,7 @@ public class UserLogin {
                 if (rs1.next()) {
                     if(rs1.getString(2).equals("Admin")){
                         Admin admin = new Admin(stage,username);
-
+                        admin.initializeComponents();
                     }
                 } else {
                     showAlert("Authentication Failed", "Invalid username or password.");
