@@ -11,13 +11,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+
+import java.sql.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.util.Arrays;
 
 public class Admin extends Application {
@@ -40,6 +40,7 @@ public class Admin extends Application {
                 throw new RuntimeException(e);
             }
         });
+        viewAppointment.setOnAction(actionEvent -> appointmentData());
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -53,6 +54,24 @@ public class Admin extends Application {
         stage.show(); // Display the stage
 
     }
+
+    private void appointmentData() {
+        String SQL = "SELECT * FROM appointments";
+        Connection con = DBUtils.establishConnection();
+        try {
+            Statement statement = con.createStatement();
+            ResultSet rs = statement.executeQuery(SQL);
+            if (rs.next()) {
+                String customerId = rs.getString("CustomerID");
+                String appointment = rs.getString("Appointment");
+                Display display = new Display(stage,customerId,appointment,username);
+                display.displayApp();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static class newManager extends Application{
 
         @Override
@@ -101,7 +120,7 @@ public class Admin extends Application {
         String uId = newUId.getText();
         byte[] salt = createSalt();
         String hashPass = generateHash(password,algorithm,salt);
-        String query = "INSERT INTO `users` (`UID`, `Role`, `Name`, `Password`, `Salt`,`Phone Number`) values(?,?,?,?,?,?) ;";
+        String query = "INSERT INTO `users` (`UID`, `Role`, `Name`, `Password`, `Salt`) values(?,?,?,?,?) ;";
         String regex = "Manager|manager";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(role);
@@ -114,7 +133,6 @@ public class Admin extends Application {
                 statement.setString(3, name);
                 statement.setString(4, hashPass);
                 statement.setString(5, Arrays.toString(salt));
-                statement.setString(6, phone);
                 int rs = statement.executeUpdate();
                 if (rs == 1) {
                     showAlert("Success", "Manager Added");
