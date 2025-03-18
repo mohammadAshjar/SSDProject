@@ -51,7 +51,7 @@ public class Admin extends Application {
         Scene scene = new Scene(grid, 500, 300);
 
         stage.setScene(scene);
-        stage.show(); // Display the stage
+        stage.show();
 
     }
 
@@ -59,12 +59,10 @@ public class Admin extends Application {
         String SQL = "SELECT * FROM appointments";
         Connection con = DBUtils.establishConnection();
         try {
-            Statement statement = con.createStatement();
+            Statement statement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
             ResultSet rs = statement.executeQuery(SQL);
-            if (rs.next()) {
-                String customerId = rs.getString("CustomerID");
-                String appointment = rs.getString("Appointment");
-                Display display = new Display(stage,customerId,appointment,username);
+            if(rs.next()) {
+                Display display = new Display(stage,username, rs);
                 display.displayApp();
             }
         } catch (SQLException e) {
@@ -81,7 +79,6 @@ public class Admin extends Application {
             newPassword = new TextField();
             newRole = new TextField();
             newPhone = new TextField();
-            newUId = new TextField();
             Button registerButton = new Button("Register");
 
             registerButton.setOnAction(e -> {
@@ -96,8 +93,6 @@ public class Admin extends Application {
             grid.setHgap(10);
             grid.setPadding(new Insets(10, 10, 10, 10));
             grid.add(new Label("Enter Manager details"), 0, 0);
-            grid.add(new Label("Enter UID:"), 0, 1); //Set the col number 0, and row number 1
-            grid.add(newUId, 1, 1); //Set the col number 1, and row number 1
             grid.add(new Label("Enter Role:"), 0, 2);
             grid.add(newRole, 1, 2);
             grid.add(new Label("Enter Name:"),0,3);
@@ -109,18 +104,16 @@ public class Admin extends Application {
             grid.add(registerButton,0,6);
             Scene scene = new Scene(grid, 500, 300);
             stage.setScene(scene);
-            stage.show(); // Display the stage
+            stage.show();
         }
     }
     private static void addManager(Stage primaryStage) throws NoSuchAlgorithmException {
         String name = newName.getText();
         String password = newPassword.getText();
         String role = newRole.getText();
-        String phone = newPhone.getText();
-        String uId = newUId.getText();
         byte[] salt = createSalt();
         String hashPass = generateHash(password,algorithm,salt);
-        String query = "INSERT INTO `users` (`UID`, `Role`, `Name`, `Password`, `Salt`) values(?,?,?,?,?) ;";
+        String query = "INSERT INTO `users` (`Role`, `Name`, `Password`, `Salt`) values(?,?,?,?) ;";
         String regex = "Manager|manager";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(role);
@@ -128,11 +121,10 @@ public class Admin extends Application {
             try{
                 Connection con = DBUtils.establishConnection();
                 PreparedStatement statement = con.prepareStatement(query);
-                statement.setString(1, uId);
-                statement.setString(2, role);
-                statement.setString(3, name);
-                statement.setString(4, hashPass);
-                statement.setString(5, Arrays.toString(salt));
+                statement.setString(1, role);
+                statement.setString(2, name);
+                statement.setString(3, hashPass);
+                statement.setString(4, Arrays.toString(salt));
                 int rs = statement.executeUpdate();
                 if (rs == 1) {
                     showAlert("Success", "Manager Added");
