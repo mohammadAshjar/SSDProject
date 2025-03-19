@@ -31,11 +31,19 @@ public class Admin extends Application {
     }
     public void initializeComponents() {
         stage.setTitle("ADMIN");
-        Button registerManager = new Button("Register Manager");
+        Button registerManager = new Button("Register New Manager");
+        Button registerEmployee = new Button("Register New Employee");
         Button viewAppointment = new Button("View Appointment");
         registerManager.setOnAction(actionEvent -> {
             try {
                 new newManager().start(new Stage());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        registerEmployee.setOnAction(actionEvent -> {
+            try {
+                new newEmployee().start(new Stage());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -47,7 +55,8 @@ public class Admin extends Application {
         grid.setPadding(new Insets(10, 10, 10, 10));
         grid.add(new Label("WELCOME ADMIN"),0,0);
         grid.add(registerManager,0,1);
-        grid.add(viewAppointment,1,1);
+        grid.add(registerEmployee,1,1);
+        grid.add(viewAppointment,2,1);
         Scene scene = new Scene(grid, 500, 300);
 
         stage.setScene(scene);
@@ -107,6 +116,45 @@ public class Admin extends Application {
             stage.show();
         }
     }
+
+    public static class newEmployee extends Application{
+
+        @Override
+        public void start(Stage stage) throws Exception {
+            stage.setTitle("Registeration");
+            newName = new TextField();
+            newPassword = new TextField();
+            newRole = new TextField();
+            newPhone = new TextField();
+            Button registerButton = new Button("Register");
+
+            registerButton.setOnAction(e -> {
+                try {
+                    addEmployee(stage);
+                } catch (NoSuchAlgorithmException ex) {
+                    throw new RuntimeException(ex);
+                }
+            });
+            GridPane grid = new GridPane();
+            grid.setVgap(10);
+            grid.setHgap(10);
+            grid.setPadding(new Insets(10, 10, 10, 10));
+            grid.add(new Label("Enter Employee details"), 0, 0);
+            grid.add(new Label("Enter Role:"), 0, 2);
+            grid.add(newRole, 1, 2);
+            grid.add(new Label("Enter Name:"),0,3);
+            grid.add(newName,1,3);
+            grid.add(new Label("Enter Password:"),0,4);
+            grid.add(newPassword,1,4);
+            grid.add(new Label("Enter your Phone Number:"),0,5);
+            grid.add(newPhone,1,5);
+            grid.add(registerButton,0,6);
+            Scene scene = new Scene(grid, 500, 300);
+            stage.setScene(scene);
+            stage.show();
+        }
+    }
+
     private static void addManager(Stage primaryStage) throws NoSuchAlgorithmException {
         String name = newName.getText();
         String password = newPassword.getText();
@@ -139,6 +187,41 @@ public class Admin extends Application {
         }
     else{
         showAlert("Failure","Wrong Role");
+        }
+    }
+
+    private static void addEmployee(Stage primaryStage) throws NoSuchAlgorithmException {
+        String name = newName.getText();
+        String password = newPassword.getText();
+        String role = newRole.getText();
+        byte[] salt = createSalt();
+        String hashPass = generateHash(password,algorithm,salt);
+        String query = "INSERT INTO `users` (`Role`, `Name`, `Password`, `Salt`) values(?,?,?,?) ;";
+        String regex = "Employee|employee";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(role);
+        if(matcher.matches()){
+            try{
+                Connection con = DBUtils.establishConnection();
+                PreparedStatement statement = con.prepareStatement(query);
+                statement.setString(1, role);
+                statement.setString(2, name);
+                statement.setString(3, hashPass);
+                statement.setString(4, Arrays.toString(salt));
+                int rs = statement.executeUpdate();
+                if (rs == 1) {
+                    showAlert("Success", "Employee Added");
+                } else {
+                    showAlert("Failure", "Failed to Add Employee");
+                }
+                DBUtils.closeConnection(con,statement);
+                primaryStage.close();
+            }catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        }
+        else{
+            showAlert("Failure","Wrong Role");
         }
     }
 
