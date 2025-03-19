@@ -20,6 +20,10 @@ public class EmployeePage {
 
     public void initializeComponents() {
         stage.setTitle("Employee Dashboard - " + username);
+        Button logoutButton = new Button("Logout");
+        logoutButton.setOnAction(e -> {
+            new UserLogin(stage).initializeComponents(); // <-- Logout logic
+        });
 
         appointmentDate = new TextField();
         appointmentTime = new TextField();
@@ -47,6 +51,7 @@ public class EmployeePage {
         grid.add(new Label("Amount to Pay:"), 0, 5);
         grid.add(billAmount, 1, 5);
         grid.add(payBillBtn, 0, 6);
+        grid.add(logoutButton, 0, 7);
 
         Scene scene = new Scene(grid, 400, 300);
         stage.setScene(scene);

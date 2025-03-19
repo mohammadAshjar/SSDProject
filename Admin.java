@@ -34,6 +34,7 @@ public class Admin extends Application {
         Button registerManager = new Button("Register New Manager");
         Button registerEmployee = new Button("Register New Employee");
         Button viewAppointment = new Button("View Appointment");
+        Button logoutButton = new Button("Logout");
         registerManager.setOnAction(actionEvent -> {
             try {
                 new newManager().start(new Stage());
@@ -49,6 +50,10 @@ public class Admin extends Application {
             }
         });
         viewAppointment.setOnAction(actionEvent -> appointmentData());
+        logoutButton.setOnAction(e -> {
+            new UserLogin(stage).initializeComponents();
+        });
+
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
@@ -57,6 +62,7 @@ public class Admin extends Application {
         grid.add(registerManager,0,1);
         grid.add(registerEmployee,1,1);
         grid.add(viewAppointment,2,1);
+        grid.add(logoutButton, 1, 2);
         Scene scene = new Scene(grid, 500, 300);
 
         stage.setScene(scene);

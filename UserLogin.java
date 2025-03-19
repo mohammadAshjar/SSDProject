@@ -79,6 +79,10 @@ public class UserLogin {
                         EmployeePage employeePage = new EmployeePage(stage, username);
                         employeePage.initializeComponents();
                     }
+                    if(rs1.getString(2).equals("Manager")) {
+                        ManagerPage managerPage = new ManagerPage(stage, username);
+                        managerPage.initializeComponents();
+                    }
                 } else {
                     showAlert("Authentication Failed", "Invalid username or password.");
             }}
