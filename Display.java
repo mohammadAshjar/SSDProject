@@ -42,18 +42,25 @@ public class Display {
         int row = 0;
         while(rs.next()) {
             String appId = rs.getString("appId");
-            String carId = rs.getString("CarId");
-            String appointment = rs.getString("Appointment");
+            String carId = rs.getString("CustomerId");
+            String date = rs.getString("date");
 
-            grid.add(new Label("Car Id: "), 0, row);
-            grid.add(new Label(carId), 1, row);
-            grid.add(new Label("Appointment: "), 2, row);
-            grid.add(new Label(appointment), 3, row);
+            grid.add(new Label("Appoitnment Id: "), 0, row);
+            grid.add(new Label(appId), 1, row);
+            grid.add(new Label("Customer Id: "), 2, row);
+            grid.add(new Label(carId), 3, row);
+            grid.add(new Label("Date: "), 4, row);
+            grid.add(new Label(date), 5, row);
 
             Button deleteButton = new Button("Delete");
             deleteButton.setOnAction(event -> deleteAppointment(appId));
 
-            grid.add(deleteButton, 4, row);
+            Button updateButton = new Button("Update");
+            updateButton.setOnAction(event -> openUpdateWindow(appId));
+
+
+            grid.add(deleteButton, 6, row);
+            grid.add(updateButton, 7, row);
             row++;
         }
         grid.add(goBack,0,row);
@@ -61,6 +68,7 @@ public class Display {
         stage.setScene(display);
         stage.show();
     }
+
     public static void deleteAppointment(String appId){
         String query = "DELETE from appointments where `appId`=? ";
         try{
@@ -79,6 +87,53 @@ public class Display {
             throw new RuntimeException(e);
         }
     }
+
+    private void openUpdateWindow(String appId) {
+        Stage updateStage = new Stage();
+        updateStage.setTitle("Update Appointment");
+
+        GridPane updateGrid = new GridPane();
+        updateGrid.setHgap(10);
+        updateGrid.setVgap(10);
+        updateGrid.setPadding(new Insets(10));
+
+        Label lblDate = new Label("New Date (YYYY-MM-DD):");
+        TextField txtDate = new TextField();
+
+        Button btnSave = new Button("Save");
+        btnSave.setOnAction(e -> {
+            updateAppointment(appId, txtDate.getText());
+            updateStage.close();
+        });
+
+        updateGrid.add(lblDate, 0, 0);
+        updateGrid.add(txtDate, 1, 0);
+        updateGrid.add(btnSave, 1, 1);
+
+        Scene updateScene = new Scene(updateGrid, 300, 150);
+        updateStage.setScene(updateScene);
+        updateStage.show();
+    }
+
+    private void updateAppointment(String appId, String newDate) {
+        String query = "UPDATE appointments SET date = ? WHERE appId = ?";
+        try (Connection con = DBUtils.establishConnection();
+             PreparedStatement statement = con.prepareStatement(query)) {
+
+            statement.setString(1, newDate);
+            statement.setString(2, appId);
+            int rowsUpdated = statement.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                showAlert("Success", "Appointment updated successfully.");
+            } else {
+                showAlert("Failure", "No changes made.");
+            }
+        } catch (SQLException e) {
+            showAlert("Error", "Database update failed: " + e.getMessage());
+        }
+    }
+
     private static void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
