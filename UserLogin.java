@@ -20,6 +20,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UserLogin {
     private static String algorithm = "SHA-256";
@@ -57,41 +59,48 @@ public class UserLogin {
         String username = usernameField.getText();
         String password = passwordField.getText();
         Connection con = DBUtils.establishConnection();
+        String usernameRegex = "^[A-Za-z ]+$";
+        Pattern patternUser = Pattern.compile(usernameRegex);
+        Matcher userMatch = patternUser.matcher(username);
+        String passRegex = "^[A-Za-z0-9!@#$%^&*_ -]+$";
+        Pattern patternPass = Pattern.compile(passRegex);
+        Matcher passMatch = patternPass.matcher(password);
         String verificationQuery ="SELECT * FROM users WHERE Name=?;";
         String query = "SELECT * FROM users WHERE Name=? AND Password=?;";
-        try{
-            PreparedStatement statement = con.prepareStatement(verificationQuery);
-            statement.setString(1,username);
-            ResultSet rs = statement.executeQuery();
-            if(rs.next()){
-                byte[] salt = toBytes(rs.getString(5));
-                String hashPass = generateHash(password,algorithm,salt);
-                PreparedStatement st = con.prepareStatement(query);
-                st.setString(1, username);
-                st.setString(2, hashPass);
-                ResultSet rs1 = st.executeQuery();
-                if (rs1.next()) {
-                    if(rs1.getString(2).equals("Admin")){
-                        Admin admin = new Admin(stage,username);
-                        admin.initializeComponents();
-                    }
-                    if(rs1.getString(2).equals("Employee")){
-                        EmployeePage employeePage = new EmployeePage(stage, username);
-                        employeePage.initializeComponents();
-                    }
-                    if(rs1.getString(2).equals("Manager")) {
-                        ManagerPage managerPage = new ManagerPage(stage, username);
-                        managerPage.initializeComponents();
-                    }
-                } else {
-                    showAlert("Authentication Failed", "Invalid username or password.");
+        if(userMatch.matches() && passMatch.matches()){
+            try{
+                PreparedStatement statement = con.prepareStatement(verificationQuery);
+                statement.setString(1,username);
+                ResultSet rs = statement.executeQuery();
+                if(rs.next()){
+                    byte[] salt = toBytes(rs.getString(5));
+                    String hashPass = generateHash(password,algorithm,salt);
+                    PreparedStatement st = con.prepareStatement(query);
+                    st.setString(1, username);
+                    st.setString(2, hashPass);
+                    ResultSet rs1 = st.executeQuery();
+                    if (rs1.next()) {
+                        if(rs1.getString(2).equals("Admin")){
+                            Admin admin = new Admin(stage,username);
+                            admin.initializeComponents();
+                        }
+                        if(rs1.getString(2).equals("Employee")){
+                            EmployeePage employeePage = new EmployeePage(stage, username);
+                            employeePage.initializeComponents();
+                        }
+                        if(rs1.getString(2).equals("Manager")) {
+                            ManagerPage managerPage = new ManagerPage(stage, username);
+                            managerPage.initializeComponents();
+                        }
+                    } else {
+                        showAlert("Authentication Failed", "Invalid username or password.");
+                }}
+                DBUtils.closeConnection(con, statement);
+            } catch (Exception e) {
+                showAlert("Database Error", "Failed to connect to the database.");
             }}
-            DBUtils.closeConnection(con, statement);
-        } catch (Exception e) {
-            //We will still print the exception error in the console to help us in the development
-            e.printStackTrace();
-            //But we will remove the above line, and display an alert to the user when the app is deployed
-            showAlert("Database Error", "Failed to connect to the database.");
+        else{
+            showAlert("Authentication Failed","Invalid username or password.");
         }
     }
 
