@@ -4,6 +4,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
+import javafx.scene.control.TextInputDialog;
 
 import java.sql.*;
 
@@ -242,28 +243,62 @@ public class EmployeePage {
     }
 
     private void payBill() {
-        String amountText = billAmount.getText();
+        // Ask for QID
+        TextInputDialog qidDialog = new TextInputDialog();
+        qidDialog.setTitle("Customer QID");
+        qidDialog.setHeaderText(null);
+        qidDialog.setContentText("Enter Customer QID:");
 
-        if (amountText.isEmpty()) {
-            showAlert("Error", "Amount must not be empty!");
+        String qid = qidDialog.showAndWait().orElse("");
+        if (qid.isEmpty()) {
+            showAlert("Error", "QID must not be empty!");
             return;
         }
 
-        try {
-            double amount = Double.parseDouble(amountText);
+        // Fetch due amount from database
+        String fetchQuery = "SELECT Due FROM customer WHERE QID = ?";
+        try (Connection con = DBUtils.establishConnection();
+             PreparedStatement fetchStmt = con.prepareStatement(fetchQuery)) {
 
-            String query = "UPDATE bills SET amount_paid = ?, status = 'Paid' WHERE employee_id = ? AND status = 'Pending'";
-            try (Connection con = DBUtils.establishConnection()) {
-                PreparedStatement stmt = con.prepareStatement(query);
-                stmt.setDouble(1, amount);
-                stmt.setInt(2, getEmployeeId());
-                int result = stmt.executeUpdate();
-                if (result > 0) {
-                    showAlert("Success", "Bill paid successfully!");
-                } else {
-                    showAlert("Failure", "No pending bills found or payment failed.");
+            fetchStmt.setString(1, qid);
+            ResultSet rs = fetchStmt.executeQuery();
+
+            if (rs.next()) {
+                double dueAmount = Double.parseDouble(rs.getString("Due"));
+
+                // Show due amount and ask for payment
+                TextInputDialog paymentDialog = new TextInputDialog();
+                paymentDialog.setTitle("Pay Bill");
+                paymentDialog.setHeaderText("Due Amount: " + dueAmount + " QR");
+                paymentDialog.setContentText("Enter payment amount:");
+
+                String amountText = paymentDialog.showAndWait().orElse("");
+                if (amountText.isEmpty()) {
+                    showAlert("Error", "Payment amount must not be empty!");
+                    return;
                 }
+
+                double amountPaid = Double.parseDouble(amountText);
+                double newDue = dueAmount - amountPaid;
+
+                // Update the due amount in the database
+                String updateQuery = "UPDATE customer SET Due = ? WHERE QID = ?";
+                try (PreparedStatement updateStmt = con.prepareStatement(updateQuery)) {
+                    updateStmt.setString(1, String.valueOf(newDue));
+                    updateStmt.setString(2, qid);
+                    int result = updateStmt.executeUpdate();
+
+                    if (result > 0) {
+                        showAlert("Success", "Payment successful! New due: " + newDue + " QR");
+                    } else {
+                        showAlert("Failure", "Failed to update payment.");
+                    }
+                }
+
+            } else {
+                showAlert("Error", "Customer with QID " + qid + " not found.");
             }
+
         } catch (NumberFormatException e) {
             showAlert("Error", "Invalid amount format.");
         } catch (SQLException e) {
