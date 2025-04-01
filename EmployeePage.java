@@ -7,6 +7,8 @@ import javafx.stage.Stage;
 import javafx.scene.control.TextInputDialog;
 
 import java.sql.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class EmployeePage {
     private Stage stage;
@@ -77,13 +79,13 @@ public class EmployeePage {
         stage.setScene(scene);
         stage.show();
     }
-    public static class appointment extends Application{
+    public class appointment extends Application{
 
         @Override
         public void start(Stage stage) throws Exception {
             stage.setTitle("Appointment");
-            TextField appointmentDate = new TextField();
-            TextField appointmentTime = new TextField();
+            appointmentDate = new TextField();
+            appointmentTime = new TextField();
             Button createAppointmentBtn = new Button("Create Appointment");
             Button backButton = new Button("Back");
             GridPane grid = new GridPane();
@@ -107,7 +109,7 @@ public class EmployeePage {
 
         }
     }
-    public static class userRegister extends Application{
+    public class userRegister extends Application{
 
         @Override
         public void start(Stage stage) throws Exception {
@@ -141,7 +143,7 @@ public class EmployeePage {
         }
     }
 
-    public static class SparePartsPage extends Application {
+    public class SparePartsPage extends Application {
 
         @Override
         public void start(Stage stage) throws Exception {
@@ -199,46 +201,66 @@ public class EmployeePage {
         String qid = qId.getText();
         String nameData = name.getText();
         String phoneData = phone.getText();
-        String query = "INSERT into customer (QID , Name , Phone) values (?,?,?)";
-        try (Connection con = DBUtils.establishConnection()) {
-            PreparedStatement stmt = con.prepareStatement(query);
-            stmt.setString(1, qid);
-            stmt.setString(2, nameData);
-            stmt.setString(3, phoneData);
-            int result = stmt.executeUpdate();
-            if (result > 0) {
-                showAlert("Success", "Customer Registered successfully!");
-            } else {
-                showAlert("Failure", "Failed to Register Customer.");
+        String regexQid = "^\\d{11}%";
+        String regexName = "^[A-Za-z ]{3,}";
+        String regexPhone = "^\\d{8}$";
+        Pattern patternQid = Pattern.compile(regexQid);
+        Pattern patternName = Pattern.compile(regexName);
+        Pattern patternPhone = Pattern.compile(regexPhone);
+        Matcher matcherQid = patternQid.matcher(qid);
+        Matcher matcherName = patternName.matcher(nameData);
+        Matcher matcherPhone = patternPhone.matcher(phoneData);
+        if(matcherQid.matches()&&matcherPhone.matches()&&matcherName.matches()) {
+            String query = "INSERT into customer (QID , Name , Phone) values (?,?,?)";
+            try (Connection con = DBUtils.establishConnection()) {
+                PreparedStatement stmt = con.prepareStatement(query);
+                stmt.setString(1, qid);
+                stmt.setString(2, nameData);
+                stmt.setString(3, phoneData);
+                int result = stmt.executeUpdate();
+                if (result > 0) {
+                    showAlert("Success", "Customer Registered successfully!");
+                } else {
+                    showAlert("Failure", "Failed to Register Customer.");
+                }
+            } catch (SQLException e) {
+                showAlert("Error", "Database error: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            showAlert("Error", "Database error: " + e.getMessage());
+        }
+        else{
+            showAlert("Error","Invalid Data");
         }
     }
 
     private static void createAppointment() {
         String date = appointmentDate.getText();
         String time = appointmentTime.getText();
-
-        if (date.isEmpty() || time.isEmpty()) {
-            showAlert("Error", "Date and Time must not be empty!");
-            return;
-        }
+        String regexDate = "^\\d{4}-\\d{2}-\\d{2}$";
+        String regexTime = "^\\d{2}:\\d{2}$";
+        Pattern patternDate = Pattern.compile(regexDate);
+        Pattern patternTime = Pattern.compile(regexTime);
+        Matcher matcherDate = patternDate.matcher(date);
+        Matcher matcherTime = patternTime.matcher(time);
 
         String query = "INSERT INTO appointments (employee_id, appointment_date, appointment_time) VALUES (?, ?, ?)";
-        try (Connection con = DBUtils.establishConnection()) {
-            PreparedStatement stmt = con.prepareStatement(query);
-            stmt.setInt(1, getEmployeeId()); // Update this method properly if needed
-            stmt.setString(2, date);
-            stmt.setString(3, time);
-            int result = stmt.executeUpdate();
-            if (result > 0) {
-                showAlert("Success", "Appointment created successfully!");
-            } else {
-                showAlert("Failure", "Failed to create appointment.");
-            }
-        } catch (SQLException e) {
-            showAlert("Error", "Database error: " + e.getMessage());
+
+        if(matcherDate.matches() && matcherTime.matches()){
+            try (Connection con = DBUtils.establishConnection()) {
+                PreparedStatement stmt = con.prepareStatement(query);
+                stmt.setInt(1, getEmployeeId()); // Update this method properly if needed
+                stmt.setString(2, date);
+                stmt.setString(3, time);
+                int result = stmt.executeUpdate();
+                if (result > 0) {
+                    showAlert("Success", "Appointment created successfully!");
+                } else {
+                    showAlert("Failure", "Failed to create appointment.");
+                }
+            } catch (SQLException e) {
+                showAlert("Error", "Database error: " + e.getMessage());
+            }}
+        else{
+            showAlert("Error", "Invalid date or time");
         }
     }
 
@@ -250,60 +272,60 @@ public class EmployeePage {
         qidDialog.setContentText("Enter Customer QID:");
 
         String qid = qidDialog.showAndWait().orElse("");
-        if (qid.isEmpty()) {
-            showAlert("Error", "QID must not be empty!");
-            return;
-        }
+        String regexQid = "^\\d{11}$";
+        Pattern patternQid = Pattern.compile(regexQid);
+        Matcher matcherQid = patternQid.matcher(qid);
 
         // Fetch due amount from database
         String fetchQuery = "SELECT Due FROM customer WHERE QID = ?";
-        try (Connection con = DBUtils.establishConnection();
-             PreparedStatement fetchStmt = con.prepareStatement(fetchQuery)) {
 
-            fetchStmt.setString(1, qid);
-            ResultSet rs = fetchStmt.executeQuery();
+        if(matcherQid.matches()){
+            try (Connection con = DBUtils.establishConnection();
+                 PreparedStatement fetchStmt = con.prepareStatement(fetchQuery)) {
+                 fetchStmt.setString(1, qid);
+                 ResultSet rs = fetchStmt.executeQuery();
+                if (rs.next()) {
+                    double dueAmount = Double.parseDouble(rs.getString("Due"));
+                    // Show due amount and ask for payment
+                    TextInputDialog paymentDialog = new TextInputDialog();
+                    paymentDialog.setTitle("Pay Bill");
+                    paymentDialog.setHeaderText("Due Amount: " + dueAmount + " QR");
+                    paymentDialog.setContentText("Enter payment amount:");
 
-            if (rs.next()) {
-                double dueAmount = Double.parseDouble(rs.getString("Due"));
+                    String amountText = paymentDialog.showAndWait().orElse("");
+                    String regexAmount = "^\\d*.\\d*";
+                    Pattern patternAmount = Pattern.compile(regexAmount);
+                    Matcher matcherAmount = patternAmount.matcher(amountText);
+                    if(matcherAmount.matches()){
+                        double amountPaid = Double.parseDouble(amountText);
+                        double newDue = dueAmount - amountPaid;
 
-                // Show due amount and ask for payment
-                TextInputDialog paymentDialog = new TextInputDialog();
-                paymentDialog.setTitle("Pay Bill");
-                paymentDialog.setHeaderText("Due Amount: " + dueAmount + " QR");
-                paymentDialog.setContentText("Enter payment amount:");
+                        // Update the due amount in the database
+                        String updateQuery = "UPDATE customer SET Due = ? WHERE QID = ?";
+                        try (PreparedStatement updateStmt = con.prepareStatement(updateQuery)) {
+                            updateStmt.setString(1, String.valueOf(newDue));
+                            updateStmt.setString(2, qid);
+                            int result = updateStmt.executeUpdate();
 
-                String amountText = paymentDialog.showAndWait().orElse("");
-                if (amountText.isEmpty()) {
-                    showAlert("Error", "Payment amount must not be empty!");
-                    return;
-                }
-
-                double amountPaid = Double.parseDouble(amountText);
-                double newDue = dueAmount - amountPaid;
-
-                // Update the due amount in the database
-                String updateQuery = "UPDATE customer SET Due = ? WHERE QID = ?";
-                try (PreparedStatement updateStmt = con.prepareStatement(updateQuery)) {
-                    updateStmt.setString(1, String.valueOf(newDue));
-                    updateStmt.setString(2, qid);
-                    int result = updateStmt.executeUpdate();
-
-                    if (result > 0) {
-                        showAlert("Success", "Payment successful! New due: " + newDue + " QR");
-                    } else {
-                        showAlert("Failure", "Failed to update payment.");
+                            if (result > 0) {
+                                showAlert("Success", "Payment successful! New due: " + newDue + " QR");
+                            } else {
+                                showAlert("Failure", "Failed to update payment.");
+                            }
+                        }}
+                    else{
+                        showAlert("Error","Invalid Amount");
                     }
                 }
-
-            } else {
+                else{
+                    showAlert("Error","Wrong amount");
+                }
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }}
+        else {
                 showAlert("Error", "Customer with QID " + qid + " not found.");
             }
-
-        } catch (NumberFormatException e) {
-            showAlert("Error", "Invalid amount format.");
-        } catch (SQLException e) {
-            showAlert("Error", "Database error: " + e.getMessage());
-        }
     }
 
     private static int getEmployeeId() {
