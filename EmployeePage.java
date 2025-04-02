@@ -255,22 +255,15 @@ public class EmployeePage {
                 showAlert("Error", "Database error: " + e.getMessage());
             }
         }
-
-        private void showAlert(String title, String content) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
-            alert.setContentText(content);
-            alert.showAndWait();
-        }
+        
     }
 
     private static void registerUser() {
         String qid = qId.getText();
         String nameData = name.getText();
         String phoneData = phone.getText();
-        String regexQid = "^\\d{11}%";
-        String regexName = "^[A-Za-z ]{3,}";
+        String regexQid = "^\\d{11}$";
+        String regexName = "^[A-Za-z ]{3,}$";
         String regexPhone = "^\\d{8}$";
         Pattern patternQid = Pattern.compile(regexQid);
         Pattern patternName = Pattern.compile(regexName);
