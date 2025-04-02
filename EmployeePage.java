@@ -79,36 +79,104 @@ public class EmployeePage {
         stage.setScene(scene);
         stage.show();
     }
-    public class appointment extends Application{
+    public class appointment extends Application {
+        private TextField qidField;
+        private TextField appointmentDate;
+        private TextField appointmentTime;
 
         @Override
-        public void start(Stage stage) throws Exception {
+        public void start(Stage stage) {
             stage.setTitle("Appointment");
+
+            qidField = new TextField();
             appointmentDate = new TextField();
             appointmentTime = new TextField();
             Button createAppointmentBtn = new Button("Create Appointment");
             Button backButton = new Button("Back");
+
             GridPane grid = new GridPane();
             grid.setVgap(10);
             grid.setHgap(10);
             grid.setPadding(new Insets(10));
 
             grid.add(new Label("Create Appointment"), 0, 0);
-            grid.add(new Label("Date (YYYY-MM-DD):"), 0, 1);
-            grid.add(appointmentDate, 1, 1);
-            grid.add(new Label("Time (HH:MM):"), 0, 2);
-            grid.add(appointmentTime, 1, 2);
-            grid.add(createAppointmentBtn, 0, 3);
-            grid.add(backButton, 1, 3);
+            grid.add(new Label("QID:"), 0, 1);
+            grid.add(qidField, 1, 1);
+            grid.add(new Label("Date (YYYY-MM-DD):"), 0, 2);
+            grid.add(appointmentDate, 1, 2);
+            grid.add(new Label("Time (HH:MM):"), 0, 3);
+            grid.add(appointmentTime, 1, 3);
+            grid.add(createAppointmentBtn, 0, 4);
+            grid.add(backButton, 1, 4);
 
             createAppointmentBtn.setOnAction(e -> createAppointment());
             backButton.setOnAction(e -> new EmployeePage(stage, "Employee").initializeComponents());
+
             Scene scene = new Scene(grid, 400, 300);
             stage.setScene(scene);
             stage.show();
+        }
 
+        private void createAppointment() {
+            String qid = qidField.getText();
+            String date = appointmentDate.getText();
+            String time = appointmentTime.getText() + ":00"; // Ensuring HH:MM:SS format
+
+            if (qid.isEmpty() || date.isEmpty() || time.isEmpty()) {
+                showAlert("Error", "QID, Date, and Time must not be empty!");
+                return;
+            }
+
+            try (Connection con = DBUtils.establishConnection()) {
+                // Step 1: Check if the QID exists in customers table
+                String getCustomerQuery = "SELECT QID FROM customer WHERE QID = ?";
+                PreparedStatement getCustomerStmt = con.prepareStatement(getCustomerQuery);
+                getCustomerStmt.setString(1, qid);
+                ResultSet rs = getCustomerStmt.executeQuery();
+
+                if (!rs.next()) {
+                    showAlert("Error", "Customer with QID not found!");
+                    return;
+                }
+
+                String customerId = rs.getString("QID"); // Keep QID as a String
+
+                // Step 2: Insert into appointments table
+                String insertAppointmentQuery = "INSERT INTO appointments (customerId, date, time) VALUES (?, ?, ?)";
+                PreparedStatement insertAppointmentStmt = con.prepareStatement(insertAppointmentQuery);
+                insertAppointmentStmt.setString(1, customerId); // Use String instead of int
+                insertAppointmentStmt.setString(2, date);
+                insertAppointmentStmt.setString(3, time);
+                int appointmentInserted = insertAppointmentStmt.executeUpdate();
+
+                if (appointmentInserted > 0) {
+                    // Step 3: Update due amount in customers table
+                    String updateDueQuery = "UPDATE customer SET due = due + 100 WHERE QID = ?";
+                    PreparedStatement updateDueStmt = con.prepareStatement(updateDueQuery);
+                    updateDueStmt.setString(1, qid);
+                    updateDueStmt.executeUpdate();
+
+                    showAlert("Success", "Appointment created and due updated to +100 QAR!");
+                } else {
+                    showAlert("Failure", "Failed to create appointment.");
+                }
+
+            } catch (SQLException e) {
+                showAlert("Error", "Database error: " + e.getMessage());
+            }
+        }
+
+
+        private void showAlert(String title, String content) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(content);
+            alert.showAndWait();
         }
     }
+
+
     public class userRegister extends Application{
 
         @Override
@@ -276,56 +344,61 @@ public class EmployeePage {
         Pattern patternQid = Pattern.compile(regexQid);
         Matcher matcherQid = patternQid.matcher(qid);
 
-        // Fetch due amount from database
+        if (!matcherQid.matches()) {
+            showAlert("Error", "Invalid QID format.");
+            return;
+        }
+
         String fetchQuery = "SELECT Due FROM customer WHERE QID = ?";
+        try (Connection con = DBUtils.establishConnection();
+             PreparedStatement fetchStmt = con.prepareStatement(fetchQuery)) {
+            fetchStmt.setString(1, qid);
+            ResultSet rs = fetchStmt.executeQuery();
 
-        if(matcherQid.matches()){
-            try (Connection con = DBUtils.establishConnection();
-                 PreparedStatement fetchStmt = con.prepareStatement(fetchQuery)) {
-                 fetchStmt.setString(1, qid);
-                 ResultSet rs = fetchStmt.executeQuery();
-                if (rs.next()) {
-                    double dueAmount = Double.parseDouble(rs.getString("Due"));
-                    // Show due amount and ask for payment
-                    TextInputDialog paymentDialog = new TextInputDialog();
-                    paymentDialog.setTitle("Pay Bill");
-                    paymentDialog.setHeaderText("Due Amount: " + dueAmount + " QR");
-                    paymentDialog.setContentText("Enter payment amount:");
+            if (rs.next()) {
+                double dueAmount = rs.getDouble("Due");
 
-                    String amountText = paymentDialog.showAndWait().orElse("");
-                    String regexAmount = "^\\d*.\\d*";
-                    Pattern patternAmount = Pattern.compile(regexAmount);
-                    Matcher matcherAmount = patternAmount.matcher(amountText);
-                    if(matcherAmount.matches()){
-                        double amountPaid = Double.parseDouble(amountText);
-                        double newDue = dueAmount - amountPaid;
+                TextInputDialog paymentDialog = new TextInputDialog();
+                paymentDialog.setTitle("Pay Bill");
+                paymentDialog.setHeaderText("Due Amount: " + dueAmount + " QR");
+                paymentDialog.setContentText("Enter payment amount:");
 
-                        // Update the due amount in the database
-                        String updateQuery = "UPDATE customer SET Due = ? WHERE QID = ?";
-                        try (PreparedStatement updateStmt = con.prepareStatement(updateQuery)) {
-                            updateStmt.setString(1, String.valueOf(newDue));
-                            updateStmt.setString(2, qid);
-                            int result = updateStmt.executeUpdate();
+                String amountText = paymentDialog.showAndWait().orElse("");
+                if (!amountText.matches("^\\d+(\\.\\d{1,2})?$")) {
+                    showAlert("Error", "Invalid Amount");
+                    return;
+                }
 
-                            if (result > 0) {
-                                showAlert("Success", "Payment successful! New due: " + newDue + " QR");
-                            } else {
-                                showAlert("Failure", "Failed to update payment.");
-                            }
-                        }}
-                    else{
-                        showAlert("Error","Invalid Amount");
+                double amountPaid = Double.parseDouble(amountText);
+                double newDue = dueAmount - amountPaid;
+
+                String updateQuery = "UPDATE customer SET Due = ? WHERE QID = ?";
+                try (PreparedStatement updateStmt = con.prepareStatement(updateQuery)) {
+                    updateStmt.setDouble(1, newDue);
+                    updateStmt.setString(2, qid);
+                    int result = updateStmt.executeUpdate();
+
+                    if (result > 0) {
+                        // Insert into history_records
+                        String insertHistoryQuery = "INSERT INTO history_records (appointmentId, customerId, appointmentDate, appointmentTime, amountPaid) " +
+                                "SELECT appId, customerId, date, time, ? FROM appointments WHERE customerId = ?";
+                        try (PreparedStatement insertStmt = con.prepareStatement(insertHistoryQuery)) {
+                            insertStmt.setDouble(1, amountPaid);
+                            insertStmt.setString(2, qid);
+                            insertStmt.executeUpdate();
+                        }
+
+                        showAlert("Success", "Payment successful! New due: " + newDue + " QR");
+                    } else {
+                        showAlert("Failure", "Failed to update payment.");
                     }
                 }
-                else{
-                    showAlert("Error","Wrong amount");
-                }
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }}
-        else {
+            } else {
                 showAlert("Error", "Customer with QID " + qid + " not found.");
             }
+        } catch (SQLException e) {
+            showAlert("Error", "Database error: " + e.getMessage());
+        }
     }
 
     private static int getEmployeeId() {
