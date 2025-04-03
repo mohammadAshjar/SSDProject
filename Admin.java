@@ -24,7 +24,7 @@ public class Admin extends Application {
     private Stage stage;
     private static String algorithm = "SHA-256";
     private String username;
-    private static TextField newUId, newName, newRole, newPassword, newPhone;
+    private static TextField newName, newRole, newPassword, newPhone;
     public Admin(Stage primaryStage, String username){
         this.stage = primaryStage;
         this.username = username;
@@ -36,7 +36,7 @@ public class Admin extends Application {
         Button logoutButton = new Button("Logout");
         registerUser.setOnAction(actionEvent -> {
             try {
-                new newManager().start(new Stage());
+                new newUser().start(new Stage());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -76,7 +76,7 @@ public class Admin extends Application {
         }
     }
 
-    public static class newManager extends Application{
+    public static class newUser extends Application{
 
         @Override
         public void start(Stage stage) throws Exception {
@@ -105,7 +105,7 @@ public class Admin extends Application {
             grid.add(newName,1,3);
             grid.add(new Label("Enter Password:"),0,4);
             grid.add(newPassword,1,4);
-            grid.add(new Label("Enter your Phone Number:"),0,5);
+            grid.add(new Label("Enter Phone Number:"),0,5);
             grid.add(newPhone,1,5);
             grid.add(registerButton,0,6);
             Scene scene = new Scene(grid, 500, 300);
@@ -119,17 +119,22 @@ public class Admin extends Application {
         String role = newRole.getText();
         byte[] salt = createSalt();
         String hashPass = generateHash(password,algorithm,salt);
-        String query = "INSERT INTO `users` (`Role`, `Name`, `Password`, `Salt`) values(?,?,?,?) ;";
-        String regexRole = "Manager|manager|Employee|employee";
+        String phone = newPhone.getText();
+        String query = "INSERT INTO `users` (`Role`, `Name`, `Password`, `Salt`, `Phone`) values(?,?,?,?,?) ;";
+        String regexRole = "^(Manager|manager|Employee|employee)$";
         String regexName = "^[A-Za-z]+$";
         String regexPassword = "^[A-Za-z0-9!@#$%^&*_ -]+$";
+        String regexPhone = "^\\d{8}$";
         Pattern pattern = Pattern.compile(regexRole);
         Pattern patternName = Pattern.compile(regexName);
         Pattern patternPass = Pattern.compile(regexPassword);
+        Pattern patternPhone = Pattern.compile(regexPhone);
         Matcher matcher = pattern.matcher(role);
         Matcher matcherName = patternName.matcher(name);
         Matcher matcherPass = patternPass.matcher(password);
-        if(matcher.matches() && matcherName.matches() && matcherPass.matches()){
+        Matcher matcherPhone = patternPhone.matcher(phone);
+
+        if(matcher.matches() && matcherName.matches() && matcherPass.matches() && matcherPhone.matches()){
             try{
                 Connection con = DBUtils.establishConnection();
                 PreparedStatement statement = con.prepareStatement(query);
@@ -137,6 +142,7 @@ public class Admin extends Application {
                 statement.setString(2, name);
                 statement.setString(3, hashPass);
                 statement.setString(4, Arrays.toString(salt));
+                statement.setString(5,phone);
                 int rs = statement.executeUpdate();
                 if (rs == 1) {
                     showAlert("Success", "Manager Added");
