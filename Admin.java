@@ -54,7 +54,7 @@ public class Admin extends Application {
         grid.add(registerUser,0,1);
         grid.add(viewAppointment,1,1);
         grid.add(logoutButton, 1, 2);
-        Scene scene = new Scene(grid, 500, 300);
+        Scene scene = new Scene(grid, 400, 200);
 
         stage.setScene(scene);
         stage.show();
@@ -72,7 +72,7 @@ public class Admin extends Application {
                 display.displayApp();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            showAlert("Error","DataBase Error:"+e.getMessage());
         }
     }
 
@@ -145,9 +145,9 @@ public class Admin extends Application {
                 statement.setString(5,phone);
                 int rs = statement.executeUpdate();
                 if (rs == 1) {
-                    showAlert("Success", "Manager Added");
+                    showAlert("Success", "User Added");
                 } else {
-                    showAlert("Failure", "Failed to Add Manager");
+                    showAlert("Failure", "Failed to Add User");
                 }
                 DBUtils.closeConnection(con,statement);
                 primaryStage.close();
