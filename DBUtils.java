@@ -4,8 +4,8 @@ import java.sql.*;
 
 class DBUtils {
     private static String url = "jdbc:mysql://localhost:3306/project";
-    private static String appUsername = "root";
-    private static String appPassword = "";
+    private static String appUsername = "AdminSSD";
+    private static String appPassword = "12class34";
 
     public static Connection establishConnection() {
         Connection con = null;
