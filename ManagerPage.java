@@ -53,7 +53,17 @@ public class ManagerPage {
             }
         });
 
-        VBox layout = new VBox(15, welcomeLabel, viewReportsBtn, manageEmployeesBtn, logoutButton);
+        Button manageSparePartsBtn = new Button("Manage Spare Parts");
+        manageSparePartsBtn.setOnAction(e -> {
+            ManageSpareParts manageSpareParts = new ManageSpareParts();
+            try {
+                manageSpareParts.start(stage);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+        VBox layout = new VBox(15, welcomeLabel, viewReportsBtn, manageEmployeesBtn, manageSparePartsBtn, logoutButton);
         layout.setPadding(new Insets(20));
 
         Scene scene = new Scene(layout, 400, 250);
@@ -102,6 +112,208 @@ public class ManagerPage {
         reportStage.setScene(scene);
         reportStage.show();
     }
+
+    public class ManageSpareParts extends Application {
+
+        @Override
+        public void start(Stage stage) throws Exception {
+            stage.setTitle("Manage Spare Parts");
+            GridPane grid = new GridPane();
+            grid.setPadding(new Insets(10));
+            grid.setHgap(10);
+            grid.setVgap(10);
+
+            Label title = new Label("Spare Parts Inventory");
+            title.setStyle("-fx-font-weight: bold; -fx-font-size: 16;");
+            grid.add(title, 0, 0, 3, 1);
+
+            try (Connection con = DBUtils.establishConnection()) {
+                String sql = "SELECT * FROM spare_parts";
+                PreparedStatement stmt = con.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery();
+
+                int row = 1;
+                while (rs.next()) {
+                    int id = rs.getInt("part_id");
+                    String name = rs.getString("part_name");
+                    int price = rs.getInt("price");
+                    int quantity = rs.getInt("quantity");
+
+                    Label info = new Label("ID: " + id + ", Name: " + name + ", Price: " + price + ", Qty: " + quantity);
+                    Button deleteBtn = new Button("Delete");
+                    Button updateBtn = new Button("Update");
+
+                    deleteBtn.setOnAction(e -> deletePart(id, stage));
+                    updateBtn.setOnAction(e -> openUpdateDialog(id, stage));
+
+                    grid.add(info, 0, row);
+                    grid.add(updateBtn, 1, row);
+                    grid.add(deleteBtn, 2, row);
+                    row++;
+                }
+            } catch (SQLException e) {
+                showAlert("Error", e.getMessage());
+            }
+
+            Button back = new Button("Back");
+            back.setOnAction(e -> new ManagerPage(stage, "Manager").initializeComponents());
+            grid.add(back, 0, 20);
+
+            Button addPartButton = new Button("Add Spare Part");
+            addPartButton.setOnAction(e -> openAddPartDialog(stage));
+
+            grid.add(addPartButton, 1, 20);
+
+            Scene scene = new Scene(grid, 600, 400);
+            stage.setScene(scene);
+            stage.show();
+        }
+
+        private void openAddPartDialog(Stage stage) {
+            Stage dialog = new Stage();
+            dialog.setTitle("Add Spare Part");
+
+            GridPane grid = new GridPane();
+            grid.setPadding(new Insets(10));
+            grid.setVgap(10);
+            grid.setHgap(10);
+
+            TextField nameField = new TextField();
+            TextField priceField = new TextField();
+            TextField qtyField = new TextField();
+
+            grid.add(new Label("Part Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Price:"), 0, 1);
+            grid.add(priceField, 1, 1);
+            grid.add(new Label("Quantity:"), 0, 2);
+            grid.add(qtyField, 1, 2);
+
+            Button addButton = new Button("Add");
+            addButton.setOnAction(e -> {
+                String name = nameField.getText();
+                String priceStr = priceField.getText();
+                String qtyStr = qtyField.getText();
+
+                if (name.isEmpty() || priceStr.isEmpty() || qtyStr.isEmpty()) {
+                    showAlert("Input Error", "All fields must be filled.");
+                    return;
+                }
+
+                try {
+                    int price = Integer.parseInt(priceStr);
+                    int quantity = Integer.parseInt(qtyStr);
+
+                    try (Connection con = DBUtils.establishConnection()) {
+                        String sql = "INSERT INTO spare_parts (part_name, price, quantity) VALUES (?, ?, ?)";
+                        PreparedStatement stmt = con.prepareStatement(sql);
+                        stmt.setString(1, name);
+                        stmt.setInt(2, price);
+                        stmt.setInt(3, quantity);
+                        int result = stmt.executeUpdate();
+
+                        if (result > 0) {
+                            showAlert("Success", "Spare part added.");
+                            dialog.close();
+                            start(stage); // refresh view
+                        } else {
+                            showAlert("Failure", "Could not add part.");
+                        }
+                    }
+
+                } catch (NumberFormatException nfe) {
+                    showAlert("Input Error", "Price and Quantity must be valid numbers.");
+                } catch (Exception ex) {
+                    showAlert("Error", ex.getMessage());
+                }
+            });
+
+            grid.add(addButton, 1, 3);
+
+            Scene scene = new Scene(grid, 350, 250);
+            dialog.setScene(scene);
+            dialog.show();
+        }
+
+        private void deletePart(int partId, Stage stage) {
+            try (Connection con = DBUtils.establishConnection()) {
+                String query = "DELETE FROM spare_parts WHERE part_id = ?";
+                PreparedStatement stmt = con.prepareStatement(query);
+                stmt.setInt(1, partId);
+                int result = stmt.executeUpdate();
+
+                if (result > 0) {
+                    showAlert("Success", "Spare part deleted.");
+                    start(stage); // refresh
+                } else {
+                    showAlert("Failed", "Could not delete part.");
+                }
+            } catch (Exception e) {
+                showAlert("Error", e.getMessage());
+            }
+        }
+
+        private void openUpdateDialog(int partId, Stage stage) {
+            Stage dialog = new Stage();
+            dialog.setTitle("Update Part");
+
+            GridPane grid = new GridPane();
+            grid.setPadding(new Insets(10));
+            grid.setVgap(10);
+            grid.setHgap(10);
+
+            TextField priceField = new TextField();
+            TextField qtyField = new TextField();
+
+            grid.add(new Label("New Price:"), 0, 0);
+            grid.add(priceField, 1, 0);
+            grid.add(new Label("New Quantity:"), 0, 1);
+            grid.add(qtyField, 1, 1);
+
+            Button updateBtn = new Button("Update");
+            updateBtn.setOnAction(e -> {
+                try {
+                    int newPrice = Integer.parseInt(priceField.getText());
+                    int newQty = Integer.parseInt(qtyField.getText());
+
+                    try (Connection con = DBUtils.establishConnection()) {
+                        String sql = "UPDATE spare_parts SET price = ?, quantity = ? WHERE part_id = ?";
+                        PreparedStatement stmt = con.prepareStatement(sql);
+                        stmt.setInt(1, newPrice);
+                        stmt.setInt(2, newQty);
+                        stmt.setInt(3, partId);
+                        int result = stmt.executeUpdate();
+
+                        if (result > 0) {
+                            showAlert("Success", "Part updated.");
+                            dialog.close();
+                            start(stage); // refresh
+                        } else {
+                            showAlert("Failed", "Update failed.");
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    showAlert("Error", "Invalid input or DB error.");
+                }
+            });
+
+            grid.add(updateBtn, 1, 2);
+
+            Scene scene = new Scene(grid, 300, 200);
+            dialog.setScene(scene);
+            dialog.show();
+        }
+
+        private void showAlert(String title, String content) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(content);
+            alert.showAndWait();
+        }
+    }
+
 
     private static void showAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -246,6 +458,9 @@ public class ManagerPage {
             }
         }
     }
+
+
+
     public static byte[] createSalt(){
         byte[] bytes = new byte[5];
         SecureRandom random = new SecureRandom();
