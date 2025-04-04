@@ -232,11 +232,12 @@ public class ManagerPage {
                     int rs = statement.executeUpdate();
                     if (rs == 1) {
                         showAlert("Success", "Employee Added");
+                        new ManagerPage(primaryStage, "Manager").initializeComponents();
                     } else {
                         showAlert("Failure", "Failed to Add Manager");
                     }
                     DBUtils.closeConnection(con, statement);
-                    primaryStage.close();
+                    // primaryStage.close();
                 } catch (Exception e) {
                     showAlert("Failure", "Failed to connect to Database");
                 }

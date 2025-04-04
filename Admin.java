@@ -84,6 +84,7 @@ public class Admin extends Application {
 
             int row = 1;
             while (rs.next()) {
+                int uID = rs.getInt("uID");
                 String name = rs.getString("Name");
                 String phone = rs.getString("Phone");
                 String role = rs.getString("Role");
@@ -96,7 +97,7 @@ public class Admin extends Application {
                 // Delete user action
                 deleteButton.setOnAction(e -> {
                     try {
-                        deleteUser(rs.getInt("uID"), grid);
+                        deleteUser(uID, grid);
                     } catch (SQLException ex) {
                         showAlert("Error", "Failed to delete user.");
                     }
@@ -122,6 +123,10 @@ public class Admin extends Application {
             });
 
             grid.add(addUserButton, 0, row);
+
+            Button backButton = new Button("Back");
+            backButton.setOnAction(e -> initializeComponents());
+            grid.add(backButton, 1, row);
 
             Scene scene = new Scene(grid, 500, 400);
             stage.setScene(scene);
