@@ -199,32 +199,44 @@ public class ManagerPage {
                     showAlert("Input Error", "All fields must be filled.");
                     return;
                 }
+                String regexName = "^[A-Za-z_ -]*$";
+                String regexPrice = "^\\d*$";
+                String regexQty = "^\\d*$";
+                Pattern patternName = Pattern.compile(regexName);
+                Pattern patternPrice = Pattern.compile(regexPrice);
+                Pattern patternQty = Pattern.compile(regexQty);
+                Matcher matcherName = patternName.matcher(name);
+                Matcher matcherPrice = patternPrice.matcher(priceStr);
+                Matcher matcherQty = patternQty.matcher(qtyStr);
+                if(matcherPrice.matches()&& matcherName.matches() && matcherQty.matches()){
+                    try {
+                        int price = Integer.parseInt(priceStr);
+                        int quantity = Integer.parseInt(qtyStr);
 
-                try {
-                    int price = Integer.parseInt(priceStr);
-                    int quantity = Integer.parseInt(qtyStr);
+                        try (Connection con = DBUtils.establishConnection()) {
+                            String sql = "INSERT INTO spare_parts (part_name, price, quantity) VALUES (?, ?, ?)";
+                            PreparedStatement stmt = con.prepareStatement(sql);
+                            stmt.setString(1, name);
+                            stmt.setInt(2, price);
+                            stmt.setInt(3, quantity);
+                            int result = stmt.executeUpdate();
 
-                    try (Connection con = DBUtils.establishConnection()) {
-                        String sql = "INSERT INTO spare_parts (part_name, price, quantity) VALUES (?, ?, ?)";
-                        PreparedStatement stmt = con.prepareStatement(sql);
-                        stmt.setString(1, name);
-                        stmt.setInt(2, price);
-                        stmt.setInt(3, quantity);
-                        int result = stmt.executeUpdate();
-
-                        if (result > 0) {
-                            showAlert("Success", "Spare part added.");
-                            dialog.close();
-                            start(stage); // refresh view
-                        } else {
-                            showAlert("Failure", "Could not add part.");
+                            if (result > 0) {
+                                showAlert("Success", "Spare part added.");
+                                dialog.close();
+                                start(stage); // refresh view
+                            } else {
+                                showAlert("Failure", "Could not add part.");
+                            }
                         }
-                    }
 
                 } catch (NumberFormatException nfe) {
                     showAlert("Input Error", "Price and Quantity must be valid numbers.");
                 } catch (Exception ex) {
                     showAlert("Error", ex.getMessage());
+                }}
+                else{
+                    showAlert("Error","Invalid Input");
                 }
             });
 
@@ -275,27 +287,37 @@ public class ManagerPage {
                 try {
                     int newPrice = Integer.parseInt(priceField.getText());
                     int newQty = Integer.parseInt(qtyField.getText());
+                    String regexPrice = "^\\d*$";
+                    String regexQty = "^\\d+$";
+                    Pattern patternPrice = Pattern.compile(regexPrice);
+                    Pattern patternQty = Pattern.compile(regexQty);
+                    Matcher matcherPrice = patternPrice.matcher(priceField.getText());
+                    Matcher matcherQty = patternQty.matcher(qtyField.getText());
+                    if(matcherPrice.matches() && matcherQty.matches()){
+                        try (Connection con = DBUtils.establishConnection()) {
+                            String sql = "UPDATE spare_parts SET price = ?, quantity = ? WHERE part_id = ?";
+                            PreparedStatement stmt = con.prepareStatement(sql);
+                            stmt.setInt(1, newPrice);
+                            stmt.setInt(2, newQty);
+                            stmt.setInt(3, partId);
+                            int result = stmt.executeUpdate();
 
-                    try (Connection con = DBUtils.establishConnection()) {
-                        String sql = "UPDATE spare_parts SET price = ?, quantity = ? WHERE part_id = ?";
-                        PreparedStatement stmt = con.prepareStatement(sql);
-                        stmt.setInt(1, newPrice);
-                        stmt.setInt(2, newQty);
-                        stmt.setInt(3, partId);
-                        int result = stmt.executeUpdate();
-
-                        if (result > 0) {
-                            showAlert("Success", "Part updated.");
-                            dialog.close();
-                            start(stage); // refresh
-                        } else {
-                            showAlert("Failed", "Update failed.");
+                            if (result > 0) {
+                                showAlert("Success", "Part updated.");
+                                dialog.close();
+                                start(stage); // refresh
+                            } else {
+                                showAlert("Failed", "Update failed.");
+                            }
                         }
                     }
+                    else{
+                        showAlert("Error","Wrong Input");
+                    }
 
-                } catch (Exception ex) {
-                    showAlert("Error", "Invalid input or DB error.");
-                }
+                    } catch (Exception ex) {
+                        showAlert("Error", "Invalid input or DB error.");
+                    }
             });
 
             grid.add(updateBtn, 1, 2);
@@ -449,7 +471,6 @@ public class ManagerPage {
                         showAlert("Failure", "Failed to Add Manager");
                     }
                     DBUtils.closeConnection(con, statement);
-                    // primaryStage.close();
                 } catch (Exception e) {
                     showAlert("Failure", "Failed to connect to Database");
                 }
