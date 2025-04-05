@@ -30,9 +30,8 @@ public class EmployeePage {
         stage.setTitle("Employee Dashboard - " + username);
         Button logoutButton = new Button("Logout");
         Button registerCustomer = new Button("Register Customer");
-        logoutButton.setOnAction(e -> {
-            new UserLogin(stage).initializeComponents(); // <-- Logout logic
-        });
+        logoutButton.setOnAction(e -> AppUtils.logout(stage));
+
 
         createAppointmentBtn = new Button("Create Appointment");
 

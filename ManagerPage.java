@@ -33,9 +33,8 @@ public class ManagerPage {
         stage.setTitle("Manager Dashboard - " + username);
 
         Button logoutButton = new Button("Logout");
-        logoutButton.setOnAction(e -> {
-            new UserLogin(stage).initializeComponents(); // <-- Logout logic
-        });
+        logoutButton.setOnAction(e -> AppUtils.logout(stage));
+
 
         Label welcomeLabel = new Label("Welcome, Manager " + username + "!");
         welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");

@@ -45,9 +45,8 @@ public class Admin extends Application {
 
         manageAppointmentButton.setOnAction(actionEvent -> appointmentData());
 
-        logoutButton.setOnAction(e -> {
-            new UserLogin(stage).initializeComponents();
-        });
+        logoutButton.setOnAction(e -> AppUtils.logout(stage));
+
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
