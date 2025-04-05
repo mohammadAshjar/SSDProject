@@ -101,7 +101,7 @@ public class ManagerPage {
                 row++;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            showAlert("Error",e.getMessage());
         }
 
         Button backButton = new Button("Back");
@@ -395,7 +395,7 @@ public class ManagerPage {
             }
         }
 
-        public static class newEmployee extends Application {
+        public class newEmployee extends Application {
 
             @Override
             public void start(Stage stage) throws Exception {
@@ -427,6 +427,15 @@ public class ManagerPage {
                 grid.add(new Label("Enter Phone Number:"), 0, 5);
                 grid.add(newPhone, 1, 5);
                 grid.add(registerButton, 0, 6);
+                Button backButton = new Button("Back");
+                backButton.setOnAction(e -> {
+                    try {
+                        new ManageEmployee().start(stage);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+                grid.add(backButton,0,grid.getChildren().size());
                 Scene scene = new Scene(grid, 500, 300);
                 stage.setScene(scene);
                 stage.show();
