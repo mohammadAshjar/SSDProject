@@ -100,7 +100,7 @@ public class ManagerPage {
                 row++;
             }
         } catch (SQLException e) {
-            showAlert("Error",e.getMessage());
+            AppUtils.showAlert("Error",e.getMessage());
         }
 
         Button backButton = new Button("Back");
@@ -151,7 +151,7 @@ public class ManagerPage {
                     row++;
                 }
             } catch (SQLException e) {
-                showAlert("Error", e.getMessage());
+                AppUtils.showAlert("Error", e.getMessage());
             }
 
             Button back = new Button("Back");
@@ -195,7 +195,7 @@ public class ManagerPage {
                 String qtyStr = qtyField.getText();
 
                 if (name.isEmpty() || priceStr.isEmpty() || qtyStr.isEmpty()) {
-                    showAlert("Input Error", "All fields must be filled.");
+                    AppUtils.showAlert("Input Error", "All fields must be filled.");
                     return;
                 }
                 String regexName = "^[A-Za-z_ -]*$";
@@ -221,21 +221,21 @@ public class ManagerPage {
                             int result = stmt.executeUpdate();
 
                             if (result > 0) {
-                                showAlert("Success", "Spare part added.");
+                                AppUtils.showAlert("Success", "Spare part added.");
                                 dialog.close();
                                 start(stage); // refresh view
                             } else {
-                                showAlert("Failure", "Could not add part.");
+                                AppUtils.showAlert("Failure", "Could not add part.");
                             }
                         }
 
                 } catch (NumberFormatException nfe) {
-                    showAlert("Input Error", "Price and Quantity must be valid numbers.");
+                        AppUtils.showAlert("Input Error", "Price and Quantity must be valid numbers.");
                 } catch (Exception ex) {
-                    showAlert("Error", ex.getMessage());
+                        AppUtils.showAlert("Error", ex.getMessage());
                 }}
                 else{
-                    showAlert("Error","Invalid Input");
+                    AppUtils.showAlert("Error","Invalid Input");
                 }
             });
 
@@ -254,13 +254,13 @@ public class ManagerPage {
                 int result = stmt.executeUpdate();
 
                 if (result > 0) {
-                    showAlert("Success", "Spare part deleted.");
+                    AppUtils.showAlert("Success", "Spare part deleted.");
                     start(stage); // refresh
                 } else {
-                    showAlert("Failed", "Could not delete part.");
+                    AppUtils.showAlert("Failed", "Could not delete part.");
                 }
             } catch (Exception e) {
-                showAlert("Error", e.getMessage());
+                AppUtils.showAlert("Error", e.getMessage());
             }
         }
 
@@ -302,20 +302,20 @@ public class ManagerPage {
                             int result = stmt.executeUpdate();
 
                             if (result > 0) {
-                                showAlert("Success", "Part updated.");
+                                AppUtils.showAlert("Success", "Part updated.");
                                 dialog.close();
                                 start(stage); // refresh
                             } else {
-                                showAlert("Failed", "Update failed.");
+                                AppUtils.showAlert("Failed", "Update failed.");
                             }
                         }
                     }
                     else{
-                        showAlert("Error","Wrong Input");
+                        AppUtils.showAlert("Error","Wrong Input");
                     }
 
                     } catch (Exception ex) {
-                        showAlert("Error", "Invalid input or DB error.");
+                    AppUtils.showAlert("Error", "Invalid input or DB error.");
                     }
             });
 
@@ -325,24 +325,8 @@ public class ManagerPage {
             dialog.setScene(scene);
             dialog.show();
         }
-
-        private void showAlert(String title, String content) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
-            alert.setContentText(content);
-            alert.showAndWait();
-        }
     }
 
-
-    private static void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
     public class ManageEmployee extends Application {
 
         @Override
@@ -390,7 +374,7 @@ public class ManagerPage {
                     grid.add(detailLabel, 0, row++);
                 }
             } catch (SQLException e) {
-                showAlert("Error", "Database error: " + e.getMessage());
+                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
             }
         }
 
@@ -473,17 +457,17 @@ public class ManagerPage {
                     statement.setString(5,phone);
                     int rs = statement.executeUpdate();
                     if (rs == 1) {
-                        showAlert("Success", "Employee Added");
+                        AppUtils.showAlert("Success", "Employee Added");
                         new ManagerPage(primaryStage, "Manager").initializeComponents();
                     } else {
-                        showAlert("Failure", "Failed to Add Manager");
+                        AppUtils.showAlert("Failure", "Failed to Add Manager");
                     }
                     DBUtils.closeConnection(con, statement);
                 } catch (Exception e) {
-                    showAlert("Failure", "Failed to connect to Database");
+                    AppUtils.showAlert("Failure", "Failed to connect to Database");
                 }
             } else {
-                showAlert("Failure", "Wrong Details");
+                AppUtils.showAlert("Failure", "Wrong Details");
             }
         }
     }

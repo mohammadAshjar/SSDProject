@@ -122,7 +122,7 @@ public class EmployeePage {
             String time = appointmentTime.getText() + ":00"; // Ensuring HH:MM:SS format
 
             if (qid.isEmpty() || date.isEmpty() || time.isEmpty()) {
-                showAlert("Error", "QID, Date, and Time must not be empty!");
+                AppUtils.showAlert("Error", "QID, Date, and Time must not be empty!");
                 return;
             }
 
@@ -134,7 +134,7 @@ public class EmployeePage {
                 ResultSet rs = getCustomerStmt.executeQuery();
 
                 if (!rs.next()) {
-                    showAlert("Error", "Customer with QID not found!");
+                    AppUtils.showAlert("Error", "Customer with QID not found!");
                     return;
                 }
 
@@ -155,23 +155,14 @@ public class EmployeePage {
                     updateDueStmt.setString(1, qid);
                     updateDueStmt.executeUpdate();
 
-                    showAlert("Success", "Appointment created and due updated to +100 QAR!");
+                    AppUtils.showAlert("Success", "Appointment created and due updated to +100 QAR!");
                 } else {
-                    showAlert("Failure", "Failed to create appointment.");
+                    AppUtils.showAlert("Failure", "Failed to create appointment.");
                 }
 
             } catch (SQLException e) {
-                showAlert("Error", "Database error: " + e.getMessage());
+                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
             }
-        }
-
-
-        private void showAlert(String title, String content) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle(title);
-            alert.setHeaderText(null);
-            alert.setContentText(content);
-            alert.showAndWait();
         }
     }
 
@@ -251,7 +242,7 @@ public class EmployeePage {
                     grid.add(partLabel, 0, row++);
                 }
             } catch (SQLException e) {
-                showAlert("Error", "Database error: " + e.getMessage());
+                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
             }
         }
         
@@ -279,16 +270,16 @@ public class EmployeePage {
                 stmt.setString(3, phoneData);
                 int result = stmt.executeUpdate();
                 if (result > 0) {
-                    showAlert("Success", "Customer Registered successfully!");
+                    AppUtils.showAlert("Success", "Customer Registered successfully!");
                 } else {
-                    showAlert("Failure", "Failed to Register Customer.");
+                    AppUtils.showAlert("Failure", "Failed to Register Customer.");
                 }
             } catch (SQLException e) {
-                showAlert("Error", "Database error: " + e.getMessage());
+                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
             }
         }
         else{
-            showAlert("Error","Invalid Data");
+            AppUtils.showAlert("Error","Invalid Data");
         }
     }
 
@@ -312,15 +303,15 @@ public class EmployeePage {
                 stmt.setString(3, time);
                 int result = stmt.executeUpdate();
                 if (result > 0) {
-                    showAlert("Success", "Appointment created successfully!");
+                    AppUtils.showAlert("Success", "Appointment created successfully!");
                 } else {
-                    showAlert("Failure", "Failed to create appointment.");
+                    AppUtils.showAlert("Failure", "Failed to create appointment.");
                 }
             } catch (SQLException e) {
-                showAlert("Error", "Database error: " + e.getMessage());
+                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
             }}
         else{
-            showAlert("Error", "Invalid date or time");
+            AppUtils.showAlert("Error", "Invalid date or time");
         }
     }
 
@@ -337,7 +328,7 @@ public class EmployeePage {
         Matcher matcherQid = patternQid.matcher(qid);
 
         if (!matcherQid.matches()) {
-            showAlert("Error", "Invalid QID format.");
+            AppUtils.showAlert("Error", "Invalid QID format.");
             return;
         }
 
@@ -357,7 +348,7 @@ public class EmployeePage {
 
                 String amountText = paymentDialog.showAndWait().orElse("");
                 if (!amountText.matches("^\\d+(\\.\\d{1,2})?$")) {
-                    showAlert("Error", "Invalid Amount");
+                    AppUtils.showAlert("Error", "Invalid Amount");
                     return;
                 }
 
@@ -380,29 +371,21 @@ public class EmployeePage {
                             insertStmt.executeUpdate();
                         }
 
-                        showAlert("Success", "Payment successful! New due: " + newDue + " QR");
+                        AppUtils.showAlert("Success", "Payment successful! New due: " + newDue + " QR");
                     } else {
-                        showAlert("Failure", "Failed to update payment.");
+                        AppUtils.showAlert("Failure", "Failed to update payment.");
                     }
                 }
             } else {
-                showAlert("Error", "Customer with QID " + qid + " not found.");
+                AppUtils.showAlert("Error", "Customer with QID " + qid + " not found.");
             }
         } catch (SQLException e) {
-            showAlert("Error", "Database error: " + e.getMessage());
+            AppUtils.showAlert("Error", "Database error: " + e.getMessage());
         }
     }
 
     private static int getEmployeeId() {
         // TODO: Replace this placeholder logic with actual employee ID logic using `username`
         return 1;
-    }
-
-    private static void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }

@@ -98,7 +98,7 @@ public class Admin extends Application {
                     try {
                         deleteUser(uID, grid);
                     } catch (SQLException ex) {
-                        showAlert("Error", "Failed to delete user.");
+                        AppUtils.showAlert("Error", "Failed to delete user.");
                     }
                 });
 
@@ -132,7 +132,7 @@ public class Admin extends Application {
             stage.show();
 
         } catch (SQLException e) {
-            showAlert("Database Error", "Unable to retrieve users.");
+            AppUtils.showAlert("Database Error", "Unable to retrieve users.");
         }
     }
 
@@ -146,19 +146,19 @@ public class Admin extends Application {
             int rowsAffected = stmt.executeUpdate();
 
             if (rowsAffected == 1) {
-                showAlert("Success", "User deleted successfully.");
+                AppUtils.showAlert("Success", "User deleted successfully.");
                 grid.getChildren().clear();
                 try {
                     manageUsers(stage); // Refresh the user list after deletion
                 } catch (SQLException e) {
-                    showAlert("Error", "Failed to refresh user list.");
+                    AppUtils.showAlert("Error", "Failed to refresh user list.");
                 }
             } else {
-                showAlert("Error", "Failed to delete user.");
+                AppUtils.showAlert("Error", "Failed to delete user.");
             }
 
         } catch (SQLException e) {
-            showAlert("Error", "Failed to delete user.");
+            AppUtils.showAlert("Error", "Failed to delete user.");
         }
     }
 
@@ -175,7 +175,7 @@ public class Admin extends Application {
             }
 
         } catch (SQLException e) {
-            showAlert("Error", "Database Error: " + e.getMessage());
+            AppUtils.showAlert("Error", "Database Error: " + e.getMessage());
         }
     }
 
@@ -258,28 +258,19 @@ public class Admin extends Application {
 
                 int rs = statement.executeUpdate();
                 if (rs == 1) {
-                    showAlert("Success", "User Added");
+                    AppUtils.showAlert("Success", "User Added");
                 } else {
-                    showAlert("Failure", "Failed to Add User");
+                    AppUtils.showAlert("Failure", "Failed to Add User");
                 }
 
                 DBUtils.closeConnection(con, statement);
                 primaryStage.close();
             } catch (SQLException e) {
-                showAlert("Failure", "Failed to connect to Database");
+                AppUtils.showAlert("Failure", "Failed to connect to Database");
             }
         } else {
-            showAlert("Failure", "Invalid Details");
+            AppUtils.showAlert("Failure", "Invalid Details");
         }
-    }
-
-    // Show alert messages
-    private static void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 
     // Generate salt for password hashing

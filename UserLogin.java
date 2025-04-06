@@ -93,24 +93,17 @@ public class UserLogin {
                             managerPage.initializeComponents();
                         }
                     } else {
-                        showAlert("Authentication Failed", "Invalid username or password.");
+                        AppUtils.showAlert("Authentication Failed", "Invalid username or password.");
                 }}
                 DBUtils.closeConnection(con, statement);
             } catch (Exception e) {
-                showAlert("Database Error", "Failed to connect to the database.");
+                AppUtils.showAlert("Database Error", "Failed to connect to the database.");
             }}
         else{
-            showAlert("Authentication Failed","Invalid username or password.");
+            AppUtils.showAlert("Authentication Failed","Invalid username or password.");
         }
     }
 
-    private static void showAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
     public static byte[] createSalt(){
         byte[] bytes = new byte[5];
         SecureRandom random = new SecureRandom();
