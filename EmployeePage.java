@@ -34,6 +34,8 @@ public class EmployeePage {
         Button viewAppointmentButton = new Button("View Appointments");
         logoutButton.setOnAction(e -> AppUtils.logout(stage));
 
+        Label welcomeLabel = new Label("Welcome, Employee " + username + "!");
+        welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         createAppointmentBtn = new Button("Create Appointment");
 
@@ -71,12 +73,13 @@ public class EmployeePage {
         grid.setHgap(10);
         grid.setPadding(new Insets(10));
 
-        grid.add(viewAppointmentButton,0,0);
-        grid.add(createAppointmentBtn, 0,1 );
-        grid.add(payBillBtn, 0, 4);
-        grid.add(registerCustomer,0,2);
-        grid.add(sparePartsButton,0,3  );
-        grid.add(logoutButton, 0,5 );
+        grid.add(welcomeLabel,0,0);
+        grid.add(viewAppointmentButton,0,1);
+        grid.add(createAppointmentBtn, 0,2 );
+        grid.add(payBillBtn, 0, 3);
+        grid.add(registerCustomer,0,4);
+        grid.add(sparePartsButton,0,5  );
+        grid.add(logoutButton, 0,6 );
 
         Scene scene = new Scene(grid, 400, 300);
         stage.setScene(scene);

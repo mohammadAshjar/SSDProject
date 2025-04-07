@@ -28,11 +28,14 @@ public class Admin extends Application {
     }
 
     public void initializeComponents() {
-        stage.setTitle("ADMIN");
+        stage.setTitle("Admin Dashboard - " + username);
 
         Button manageUsersButton = new Button("Manage Users");
         Button manageAppointmentButton = new Button("Manage Appointments");
         Button logoutButton = new Button("Logout");
+
+        Label welcomeLabel = new Label("Welcome, Admin " + username + "!");
+        welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         manageUsersButton.setOnAction(actionEvent -> {
             try {
@@ -51,10 +54,10 @@ public class Admin extends Application {
         grid.setHgap(10);
         grid.setVgap(10);
         grid.setPadding(new Insets(10, 10, 10, 10));
-        grid.add(new Label("WELCOME ADMIN"), 0, 0);
+        grid.add(welcomeLabel,0,0);
         grid.add(manageUsersButton, 0, 1);
-        grid.add(manageAppointmentButton, 1, 1);
-        grid.add(logoutButton, 1, 2);
+        grid.add(manageAppointmentButton, 0, 2);
+        grid.add(logoutButton, 0, 3);
         Scene scene = new Scene(grid, 400, 200);
 
         stage.setScene(scene);
