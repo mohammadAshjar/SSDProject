@@ -1,8 +1,6 @@
 import javafx.application.Application;
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -20,12 +18,13 @@ import java.util.Arrays;
 public class Admin extends Application {
     private Stage stage;
     private static String algorithm = "SHA-256";
-    private String username;
+    private String username,role;
     private static TextField newName, newRole, newPassword, newPhone;
 
-    public Admin(Stage primaryStage, String username) {
+    public Admin(Stage primaryStage, String username, String role) {
         this.stage = primaryStage;
         this.username = username;
+        this.role = role;
     }
 
     public void initializeComponents() {
@@ -170,7 +169,7 @@ public class Admin extends Application {
              ResultSet rs = statement.executeQuery(SQL)) {
 
             if (rs.next()) {
-                Display display = new Display(stage, username, rs);
+                Display display = new Display(stage, username, rs,role);
                 display.displayApp();
             }
 

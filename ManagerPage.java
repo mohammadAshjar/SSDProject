@@ -1,7 +1,6 @@
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -19,14 +18,15 @@ import java.util.regex.Pattern;
 
 public class ManagerPage {
     private Stage stage;
-    private String username;
+    private String username,role;
     private static String algorithm = "SHA-256";
     private static TextField newName, newRole, newPassword, newPhone;
 
 
-    public ManagerPage(Stage stage, String username) {
+    public ManagerPage(Stage stage, String username, String role) {
         this.stage = stage;
         this.username = username;
+        this.role = role;
     }
 
     public void initializeComponents() {
@@ -41,8 +41,10 @@ public class ManagerPage {
 
         Button viewReportsBtn = new Button("View Reports");
         Button manageEmployeesBtn = new Button("Manage Employees");
+        Button viewAppointmentButton = new Button("View Appointments");
 
         viewReportsBtn.setOnAction(e -> showReportPage());
+        viewAppointmentButton.setOnAction(actionEvent -> appointmentData());
         manageEmployeesBtn.setOnAction(e -> {
             ManageEmployee manageEmployee = new ManageEmployee();
             try {
@@ -62,7 +64,7 @@ public class ManagerPage {
             }
         });
 
-        VBox layout = new VBox(15, welcomeLabel, viewReportsBtn, manageEmployeesBtn, manageSparePartsBtn, logoutButton);
+        VBox layout = new VBox(15, welcomeLabel,viewAppointmentButton, viewReportsBtn, manageEmployeesBtn, manageSparePartsBtn, logoutButton);
         layout.setPadding(new Insets(20));
 
         Scene scene = new Scene(layout, 400, 250);
@@ -155,7 +157,7 @@ public class ManagerPage {
             }
 
             Button back = new Button("Back");
-            back.setOnAction(e -> new ManagerPage(stage, "Manager").initializeComponents());
+            back.setOnAction(e -> new ManagerPage(stage, "Manager", "Manager").initializeComponents());
             grid.add(back, 0, 20);
 
             Button addPartButton = new Button("Add Spare Part");
@@ -341,7 +343,7 @@ public class ManagerPage {
 
             Button backButton = new Button("Back");
             Button addEmployee = new Button("Add");
-            backButton.setOnAction(e -> new ManagerPage(stage, "Manager").initializeComponents());
+            backButton.setOnAction(e -> new ManagerPage(stage, "Manager", "Manager").initializeComponents());
             addEmployee.setOnAction(actionEvent -> {
                 try {
                     new newEmployee().start(stage);
@@ -458,7 +460,7 @@ public class ManagerPage {
                     int rs = statement.executeUpdate();
                     if (rs == 1) {
                         AppUtils.showAlert("Success", "Employee Added");
-                        new ManagerPage(primaryStage, "Manager").initializeComponents();
+                        new ManagerPage(primaryStage, "Manager", "Manager").initializeComponents();
                     } else {
                         AppUtils.showAlert("Failure", "Failed to Add Manager");
                     }
@@ -469,6 +471,23 @@ public class ManagerPage {
             } else {
                 AppUtils.showAlert("Failure", "Wrong Details");
             }
+        }
+    }
+
+    // Method to show appointment data
+    private void appointmentData() {
+        String SQL = "SELECT * FROM appointments";
+        try (Connection con = DBUtils.establishConnection();
+             Statement statement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+             ResultSet rs = statement.executeQuery(SQL)) {
+
+            if (rs.next()) {
+                Display display = new Display(stage, username, rs,role);
+                display.displayApp();
+            }
+
+        } catch (SQLException e) {
+            AppUtils.showAlert("Error", "Database Error: " + e.getMessage());
         }
     }
 

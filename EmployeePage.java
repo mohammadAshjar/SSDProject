@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 
 public class EmployeePage {
     private Stage stage;
-    private String username;
+    private String username,role;
     private static TextField qId;
     private static TextField name;
     private static TextField phone;
@@ -21,15 +21,17 @@ public class EmployeePage {
     private TextField billAmount;
     private Button createAppointmentBtn, payBillBtn;
 
-    public EmployeePage(Stage stage, String username) {
+    public EmployeePage(Stage stage, String username, String role) {
         this.stage = stage;
         this.username = username;
+        this.role = role;
     }
 
     public void initializeComponents() {
         stage.setTitle("Employee Dashboard - " + username);
         Button logoutButton = new Button("Logout");
         Button registerCustomer = new Button("Register Customer");
+        Button viewAppointmentButton = new Button("View Appointments");
         logoutButton.setOnAction(e -> AppUtils.logout(stage));
 
 
@@ -61,6 +63,7 @@ public class EmployeePage {
                 throw new RuntimeException(e);
             }
         });
+        viewAppointmentButton.setOnAction(actionEvent -> appointmentData());
         payBillBtn.setOnAction(e -> payBill());
 
         GridPane grid = new GridPane();
@@ -68,11 +71,12 @@ public class EmployeePage {
         grid.setHgap(10);
         grid.setPadding(new Insets(10));
 
-        grid.add(createAppointmentBtn, 0, 0);
-        grid.add(payBillBtn, 0, 1);
+        grid.add(viewAppointmentButton,0,0);
+        grid.add(createAppointmentBtn, 0,1 );
+        grid.add(payBillBtn, 0, 4);
         grid.add(registerCustomer,0,2);
-        grid.add(sparePartsButton,0, 3 );
-        grid.add(logoutButton, 0, 4);
+        grid.add(sparePartsButton,0,3  );
+        grid.add(logoutButton, 0,5 );
 
         Scene scene = new Scene(grid, 400, 300);
         stage.setScene(scene);
@@ -109,7 +113,7 @@ public class EmployeePage {
             grid.add(backButton, 1, 4);
 
             createAppointmentBtn.setOnAction(e -> createAppointment());
-            backButton.setOnAction(e -> new EmployeePage(stage, "Employee").initializeComponents());
+            backButton.setOnAction(e -> new EmployeePage(stage, "Employee", role).initializeComponents());
 
             Scene scene = new Scene(grid, 400, 300);
             stage.setScene(scene);
@@ -207,7 +211,7 @@ public class EmployeePage {
             grid.add(backButton, 1, 4);
 
             registerUser.setOnAction(e -> registerUser());
-            backButton.setOnAction(e -> new EmployeePage(stage, "Employee").initializeComponents());
+            backButton.setOnAction(e -> new EmployeePage(stage, "Employee", role).initializeComponents());
             Scene scene = new Scene(grid, 400, 300);
             stage.setScene(scene);
             stage.show();
@@ -231,7 +235,7 @@ public class EmployeePage {
             loadSpareParts(grid);
 
             Button backButton = new Button("Back");
-            backButton.setOnAction(e -> new EmployeePage(stage, "Employee").initializeComponents());
+            backButton.setOnAction(e -> new EmployeePage(stage, "Employee", role).initializeComponents());
             grid.add(backButton, 1, 0);
 
             Scene scene = new Scene(grid, 400, 400);
@@ -364,6 +368,22 @@ public class EmployeePage {
             }
         } catch (SQLException e) {
             AppUtils.showAlert("Error", "Database error: " + e.getMessage());
+        }
+    }
+    // Method to show appointment data
+    private void appointmentData() {
+        String SQL = "SELECT * FROM appointments";
+        try (Connection con = DBUtils.establishConnection();
+             Statement statement = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+             ResultSet rs = statement.executeQuery(SQL)) {
+
+            if (rs.next()) {
+                Display display = new Display(stage, username, rs,role);
+                display.displayApp();
+            }
+
+        } catch (SQLException e) {
+            AppUtils.showAlert("Error", "Database Error: " + e.getMessage());
         }
     }
 }

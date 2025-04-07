@@ -1,7 +1,5 @@
-import java.awt.event.ActionEvent;
 import java.sql.*;
 
-import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -14,60 +12,106 @@ import javafx.stage.Stage;
 import static javafx.application.Application.launch;
 
 public class Display {
-    private String user;
+    private String user,role;
     private Scene display;
     private Stage stage;
     private ResultSet rs;
-    public Display(Stage primaryStage,String user, ResultSet rs){
+    public Display(Stage primaryStage,String user, ResultSet rs, String role){
         this.user = user;
         this.stage = primaryStage;
         this.rs = rs;
+        this.role = role;
     }
     public void displayApp() throws SQLException {
-        Button goBack = new Button("Back");
-        Button deleteAppointment = new Button("Delete");
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(10,10,10,10));
-        goBack.setOnAction(actionEvent -> {
-            Admin admin = new Admin(stage,user);
-            try {
-                admin.initializeComponents();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        if(user.equals("Admin") || user.equals("admin")){
+            Button goBack = new Button("Back");
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(10,10,10,10));
+            goBack.setOnAction(actionEvent -> {
+                Admin admin = new Admin(stage,user, role);
+                try {
+                    admin.initializeComponents();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            rs.beforeFirst();
+            int row = 0;
+            while(rs.next()) {
+                String appId = rs.getString("appId");
+                String carId = rs.getString("CustomerId");
+                String date = rs.getString("date");
+
+                grid.add(new Label("Appoitnment Id: "), 0, row);
+                grid.add(new Label(appId), 1, row);
+                grid.add(new Label("Customer Id: "), 2, row);
+                grid.add(new Label(carId), 3, row);
+                grid.add(new Label("Date: "), 4, row);
+                grid.add(new Label(date), 5, row);
+
+                Button deleteButton = new Button("Delete");
+                deleteButton.setOnAction(event -> deleteAppointment(appId));
+
+                Button updateButton = new Button("Update");
+                updateButton.setOnAction(event -> openUpdateWindow(appId));
+
+
+                grid.add(deleteButton, 6, row);
+                grid.add(updateButton, 7, row);
+                row++;
             }
-        });
-        rs.beforeFirst();
-        int row = 0;
-        while(rs.next()) {
-            String appId = rs.getString("appId");
-            String carId = rs.getString("CustomerId");
-            String date = rs.getString("date");
-
-            grid.add(new Label("Appoitnment Id: "), 0, row);
-            grid.add(new Label(appId), 1, row);
-            grid.add(new Label("Customer Id: "), 2, row);
-            grid.add(new Label(carId), 3, row);
-            grid.add(new Label("Date: "), 4, row);
-            grid.add(new Label(date), 5, row);
-
-            Button deleteButton = new Button("Delete");
-            deleteButton.setOnAction(event -> deleteAppointment(appId));
-
-            Button updateButton = new Button("Update");
-            updateButton.setOnAction(event -> openUpdateWindow(appId));
-
-
-            grid.add(deleteButton, 6, row);
-            grid.add(updateButton, 7, row);
-            row++;
+            grid.add(goBack,0,row);
+            Scene display = new Scene(grid, 500, 300);
+            stage.setScene(display);
+            stage.show();
         }
-        grid.add(goBack,0,row);
-        Scene display = new Scene(grid, 500, 300);
-        stage.setScene(display);
-        stage.show();
+        else {
+            Button goBack = new Button("Back");
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(10, 10, 10, 10));
+            goBack.setOnAction(actionEvent -> {
+                if(role.equals("Manager") || role.equals("manager")){
+                    ManagerPage managerPage = new ManagerPage(stage,user,"Manager");
+                    try {
+                        managerPage.initializeComponents();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                }}
+                else{
+                    EmployeePage employeePage = new EmployeePage(stage,user, role);
+                    try {
+                        employeePage.initializeComponents();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                }}
+            });
+            rs.beforeFirst();
+            int row = 0;
+            while (rs.next()) {
+                String appId = rs.getString("appId");
+                String carId = rs.getString("CustomerId");
+                String date = rs.getString("date");
+
+                grid.add(new Label("Appoitnment Id: "), 0, row);
+                grid.add(new Label(appId), 1, row);
+                grid.add(new Label("Customer Id: "), 2, row);
+                grid.add(new Label(carId), 3, row);
+                grid.add(new Label("Date: "), 4, row);
+                grid.add(new Label(date), 5, row);
+                row++;
+            }
+            grid.add(goBack, 0, row);
+            Scene display = new Scene(grid, 500, 300);
+            stage.setScene(display);
+            stage.show();
+
+        }
     }
+
 
     public static void deleteAppointment(String appId){
         String query = "DELETE from appointments where `appId`=? ";

@@ -81,15 +81,15 @@ public class UserLogin {
                     ResultSet rs1 = st.executeQuery();
                     if (rs1.next()) {
                         if(rs1.getString(2).equals("Admin") || rs1.getString(2).equals("admin")){
-                            Admin admin = new Admin(stage,username);
+                            Admin admin = new Admin(stage,username,rs1.getString(2));
                             admin.initializeComponents();
                         }
                         if(rs1.getString(2).equals("Employee") || rs1.getString(2).equals("employee")){
-                            EmployeePage employeePage = new EmployeePage(stage, username);
+                            EmployeePage employeePage = new EmployeePage(stage, username,rs1.getString(2));
                             employeePage.initializeComponents();
                         }
                         if(rs1.getString(2).equals("Manager") || rs1.getString(2).equals("manager")) {
-                            ManagerPage managerPage = new ManagerPage(stage, username);
+                            ManagerPage managerPage = new ManagerPage(stage, username,rs1.getString(2));
                             managerPage.initializeComponents();
                         }
                     } else {
