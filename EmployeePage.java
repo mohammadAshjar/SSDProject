@@ -120,48 +120,62 @@ public class EmployeePage {
             String qid = qidField.getText();
             String date = appointmentDate.getText();
             String time = appointmentTime.getText() + ":00"; // Ensuring HH:MM:SS format
+            String regexDate = "^\\d{4}-\\d{2}-\\d{2}$";
+            String regexTime = "^\\d{2}:\\d{2}:00$";
+            String regexQid = "^\\d{11}$";
+            Pattern patternQid = Pattern.compile(regexQid);
+            Pattern patternDate = Pattern.compile(regexDate);
+            Pattern patternTime = Pattern.compile(regexTime);
+            Matcher matcherQid = patternQid.matcher(qid);
+            Matcher matcherDate = patternDate.matcher(date);
+            Matcher matcherTime = patternTime.matcher(time);
+
 
             if (qid.isEmpty() || date.isEmpty() || time.isEmpty()) {
                 AppUtils.showAlert("Error", "QID, Date, and Time must not be empty!");
                 return;
             }
+            if(matcherDate.matches() && matcherTime.matches() && matcherQid.matches()){
+                try (Connection con = DBUtils.establishConnection()) {
+                    // Step 1: Check if the QID exists in customers table
+                    String getCustomerQuery = "SELECT QID FROM customer WHERE QID = ?";
+                    PreparedStatement getCustomerStmt = con.prepareStatement(getCustomerQuery);
+                    getCustomerStmt.setString(1, qid);
+                    ResultSet rs = getCustomerStmt.executeQuery();
 
-            try (Connection con = DBUtils.establishConnection()) {
-                // Step 1: Check if the QID exists in customers table
-                String getCustomerQuery = "SELECT QID FROM customer WHERE QID = ?";
-                PreparedStatement getCustomerStmt = con.prepareStatement(getCustomerQuery);
-                getCustomerStmt.setString(1, qid);
-                ResultSet rs = getCustomerStmt.executeQuery();
+                    if (!rs.next()) {
+                        AppUtils.showAlert("Error", "Customer with QID not found!");
+                        return;
+                    }
 
-                if (!rs.next()) {
-                    AppUtils.showAlert("Error", "Customer with QID not found!");
-                    return;
+                    String customerId = rs.getString("QID"); // Keep QID as a String
+
+                    // Step 2: Insert into appointments table
+                    String insertAppointmentQuery = "INSERT INTO appointments (customerId, date, time) VALUES (?, ?, ?)";
+                    PreparedStatement insertAppointmentStmt = con.prepareStatement(insertAppointmentQuery);
+                    insertAppointmentStmt.setString(1, customerId); // Use String instead of int
+                    insertAppointmentStmt.setString(2, date);
+                    insertAppointmentStmt.setString(3, time);
+                    int appointmentInserted = insertAppointmentStmt.executeUpdate();
+
+                    if (appointmentInserted > 0) {
+                        // Step 3: Update due amount in customers table
+                        String updateDueQuery = "UPDATE customer SET due = due + 100 WHERE QID = ?";
+                        PreparedStatement updateDueStmt = con.prepareStatement(updateDueQuery);
+                        updateDueStmt.setString(1, qid);
+                        updateDueStmt.executeUpdate();
+
+                        AppUtils.showAlert("Success", "Appointment created and due updated to +100 QAR!");
+                    } else {
+                        AppUtils.showAlert("Failure", "Failed to create appointment.");
+                    }
+
+                } catch (SQLException e) {
+                    AppUtils.showAlert("Error", "Database error: " + e.getMessage());
                 }
-
-                String customerId = rs.getString("QID"); // Keep QID as a String
-
-                // Step 2: Insert into appointments table
-                String insertAppointmentQuery = "INSERT INTO appointments (customerId, date, time) VALUES (?, ?, ?)";
-                PreparedStatement insertAppointmentStmt = con.prepareStatement(insertAppointmentQuery);
-                insertAppointmentStmt.setString(1, customerId); // Use String instead of int
-                insertAppointmentStmt.setString(2, date);
-                insertAppointmentStmt.setString(3, time);
-                int appointmentInserted = insertAppointmentStmt.executeUpdate();
-
-                if (appointmentInserted > 0) {
-                    // Step 3: Update due amount in customers table
-                    String updateDueQuery = "UPDATE customer SET due = due + 100 WHERE QID = ?";
-                    PreparedStatement updateDueStmt = con.prepareStatement(updateDueQuery);
-                    updateDueStmt.setString(1, qid);
-                    updateDueStmt.executeUpdate();
-
-                    AppUtils.showAlert("Success", "Appointment created and due updated to +100 QAR!");
-                } else {
-                    AppUtils.showAlert("Failure", "Failed to create appointment.");
-                }
-
-            } catch (SQLException e) {
-                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
+            }
+            else{
+                AppUtils.showAlert("Error","Please Enter correct details");
             }
         }
     }
@@ -283,37 +297,6 @@ public class EmployeePage {
         }
     }
 
-    private static void createAppointment() {
-        String date = appointmentDate.getText();
-        String time = appointmentTime.getText();
-        String regexDate = "^\\d{4}-\\d{2}-\\d{2}$";
-        String regexTime = "^\\d{2}:\\d{2}$";
-        Pattern patternDate = Pattern.compile(regexDate);
-        Pattern patternTime = Pattern.compile(regexTime);
-        Matcher matcherDate = patternDate.matcher(date);
-        Matcher matcherTime = patternTime.matcher(time);
-
-        String query = "INSERT INTO appointments (employee_id, appointment_date, appointment_time) VALUES (?, ?, ?)";
-
-        if(matcherDate.matches() && matcherTime.matches()){
-            try (Connection con = DBUtils.establishConnection()) {
-                PreparedStatement stmt = con.prepareStatement(query);
-                stmt.setInt(1, getEmployeeId()); // Update this method properly if needed
-                stmt.setString(2, date);
-                stmt.setString(3, time);
-                int result = stmt.executeUpdate();
-                if (result > 0) {
-                    AppUtils.showAlert("Success", "Appointment created successfully!");
-                } else {
-                    AppUtils.showAlert("Failure", "Failed to create appointment.");
-                }
-            } catch (SQLException e) {
-                AppUtils.showAlert("Error", "Database error: " + e.getMessage());
-            }}
-        else{
-            AppUtils.showAlert("Error", "Invalid date or time");
-        }
-    }
 
     private void payBill() {
         // Ask for QID
@@ -382,10 +365,5 @@ public class EmployeePage {
         } catch (SQLException e) {
             AppUtils.showAlert("Error", "Database error: " + e.getMessage());
         }
-    }
-
-    private static int getEmployeeId() {
-        // TODO: Replace this placeholder logic with actual employee ID logic using `username`
-        return 1;
     }
 }

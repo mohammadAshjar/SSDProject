@@ -80,15 +80,15 @@ public class UserLogin {
                     st.setString(2, hashPass);
                     ResultSet rs1 = st.executeQuery();
                     if (rs1.next()) {
-                        if(rs1.getString(2).equals("Admin")){
+                        if(rs1.getString(2).equals("Admin") || rs1.getString(2).equals("admin")){
                             Admin admin = new Admin(stage,username);
                             admin.initializeComponents();
                         }
-                        if(rs1.getString(2).equals("Employee")){
+                        if(rs1.getString(2).equals("Employee") || rs1.getString(2).equals("employee")){
                             EmployeePage employeePage = new EmployeePage(stage, username);
                             employeePage.initializeComponents();
                         }
-                        if(rs1.getString(2).equals("Manager")) {
+                        if(rs1.getString(2).equals("Manager") || rs1.getString(2).equals("manager")) {
                             ManagerPage managerPage = new ManagerPage(stage, username);
                             managerPage.initializeComponents();
                         }
